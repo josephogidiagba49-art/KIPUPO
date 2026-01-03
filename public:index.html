@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RedTeam MagicSender Ultimate v5.2 - GOD MODE</title>
+  <style>
+    * { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; }
+    body { max-width: 900px; margin: 0 auto; padding: 20px; }
+    input, textarea, button { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #00ff00; }
+    button { background: #ff0040; cursor: pointer; font-weight: bold; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .stat { text-align: center; padding: 20px; border: 1px solid #333; }
+    .progress { height: 20px; background: #333; margin: 10px 0; }
+    .bar { height: 100%; background: linear-gradient(90deg, #00ff00, #ff0040); width: 0%; }
+    .step { display: none; }
+    .step.active { display: block; }
+    h1 { color: #ff0040; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>🎯 REDTEAM MAGICSENDER ULTIMATE v5.2</h1>
+  <h2>HARVARD CS PENTEST | GOD MODE ACTIVATED</h2>
+  
+  <!-- Step 1: Email Input -->
+  <div id="step1" class="step active">
+    <h3>📧 STEP 1: Target Emails</h3>
+    <textarea id="emails" rows="8" placeholder="email1@target.com&#10;email2@target.com&#10;..."></textarea>
+    <button onclick="nextStep()">NEXT → SMTP HARVEST</button>
+  </div>
+  
+  <!-- Step 2: SMTP Status -->
+  <div id="step2" class="step">
+    <h3>🌐 STEP 2: SMTP HARVESTING...</h3>
+    <div class="progress"><div id="harvestBar" class="bar"></div></div>
+    <div class="stats">
+      <div class="stat">Providers Active<br><span id="providers">0</span></div>
+      <div class="stat">Leads Parsed<br><span id="leads">0</span></div>
+      <div class="stat">Campaigns<br><span id="campaigns">0</span></div>
+    </div>
+    <button onclick="harvestSMTPs()">🔄 HARVEST SMTPs</button>
+  </div>
+  
+  <!-- Step 3: BLAST -->
+  <div id="step3" class="step">
+    <h3>💥 STEP 3: PHISH BLAST READY</h3>
+    <div class="stats">
+      <div class="stat">Success Rate<br><span id="successRate">0%</span></div>
+      <div class="stat">Total Obliterated<br><span id="sent">0/0</span></div>
+      <div class="stat">Remaining<br><span id="remaining">0</span></div>
+    </div>
+    <div class="progress"><div id="blastBar" class="bar"></div></div>
+    <select id="template">
+      <option value="default">AI Template: Urgent Verification</option>
+      <option value="bank">AI Template: Bank Alert</option>
+      <option value="custom">✏️ Custom Message</option>
+    </select>
+    <textarea id="customMsg" style="display:none;" placeholder="Custom phishing HTML..."></textarea>
+    <button onclick="startBlast()">🚀 INITIATE TOTAL OBLITERATION</button>
+  </div>
+
+  <script>
+    let interval;
+    
+    async function updateStats() {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+      
+      document.getElementById('successRate').textContent = data.successRate + '%';
+      document.getElementById('sent').textContent = `${data.stats.obliterated}/${data.stats.total}`;
+      document.getElementById('providers').textContent = data.providersActive;
+      document.getElementById('leads').textContent = data.leadsParsed;
+      document.getElementById('campaigns').textContent = data.campaigns;
+      document.getElementById('remaining').textContent = data.emailsRemaining;
+      
+      // Progress bars
+      const obliteratePct = (data.stats.obliterate / data.stats.total) * 100;
+      document.getElementById('blastBar').style.width = obliteratePct + '%';
+      
+      // Show steps
+      showStep(data.step);
+    }
+    
+    function showStep(step) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+    }
+    
+    async function nextStep() {
+      const emails = document.getElementById('emails').value;
+      await fetch('/api/step1', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({emails})
+      });
+      updateStats();
+    }
+    
+    async function harvestSMTPs() {
+      await fetch('/api/step2', {method: 'POST'});
+      updateStats();
+    }
+    
+    async function startBlast() {
+      const template = document.getElementById('template').value;
+      await fetch('/api/blast', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({template})
+      });
+    }
+    
+    // Auto-update every 2s
+    setInterval(updateStats, 2000);
+    updateStats();
+  </script>
+</body>
+</html>
