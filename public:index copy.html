@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MagicSender v5.3 - GOD MODE</title>
+  <style>
+    * { font-family: 'Courier New', monospace; background: #000; color: #0f0; margin: 0; padding: 0; }
+    body { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .container { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+    input, textarea, select, button { 
+      width: 100%; padding: 12px; margin: 8px 0; 
+      border: 1px solid #0f0; background: #111; color: #0f0; 
+      font-family: inherit; font-size: 14px;
+    }
+    button { background: #f00; cursor: pointer; font-weight: bold; border: none; }
+    button:hover { background: #ff0; color: #000; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+    .stat { text-align: center; padding: 15px; border: 1px solid #333; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .templates { max-height: 400px; overflow-y: auto; }
+    .template-item { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; }
+    .template-item:hover { background: #222; }
+    .preview { background: #111; padding: 20px; border: 1px solid #0f0; min-height: 200px; }
+    h1 { color: #f00; text-align: center; margin-bottom: 10px; }
+    h3 { color: #ff0; margin: 20px 0 10px 0; }
+    .progress { height: 25px; background: #222; margin: 10px 0; border: 1px solid #0f0; }
+    .bar { height: 100%; background: linear-gradient(90deg, #0f0, #f00, #ff0); transition: width 0.3s; }
+  </style>
+</head>
+<body>
+  <h1>🎯 REDTEAM MAGICSENDER ULTIMATE v5.3</h1>
+  <h2 style="text-align:center;color:#ff0;">HARVARD CS | PHASE 3 GOD MODE | AI TEMPLATES + CUSTOM</h2>
+  
+  <div class="container">
+    <!-- MAIN PANEL -->
+    <div>
+      <!-- Step 1: Emails -->
+      <div id="step1" class="step active">
+        <h3>📧 STEP 1: TARGET LIST</h3>
+        <textarea id="emails" rows="6" placeholder="target1@company.com&#10;target2@company.com&#10;... (paste 1000s)"></textarea>
+        <button onclick="nextStep(1)">➡️ HARVEST SMTPs</button>
+      </div>
+      
+      <!-- Step 2: SMTP -->
+      <div id="step2" class="step">
+        <h3>🌐 STEP 2: SMTP HARVEST COMPLETE</h3>
+        <div class="stats">
+          <div class="stat">Providers Active<br><strong id="providers">0</strong></div>
+          <div class="stat">Leads Loaded<br><strong id="leads">0</strong></div>
+          <div class="stat">Campaigns<br><strong id="campaigns">0</strong></div>
+          <div class="stat">Success Rate<br><strong id="successRate">0%</strong></div>
+        </div>
+        <button onclick="nextStep(2)">➡️ SELECT TEMPLATE</button>
+      </div>
+      
+      <!-- Step 3: BLAST -->
+      <div id="step3" class="step">
+        <h3>💥 STEP 3: TOTAL OBLITERATION</h3>
+        <div class="stats">
+          <div class="stat">Total Obliterated<br><strong id="sent">0/0</strong></div>
+          <div class="stat">Remaining<br><strong id="remaining">0</strong></div>
+          <div class="stat">Bounced<br><strong id="bounced">0</strong></div>
+          <div class="stat">Current Template<br><strong id="currentTemplate">-</strong></div>
+        </div>
+        <div class="progress"><div id="blastBar" class="bar" style="width:0%"></div></div>
+        <button onclick="stopBlast()" id="stopBtn" style="display:none;background:#ff0;color:#000;">⏹️ STOP BLAST</button>
+      </div>
+    </div>
+    
+    <!-- SIDEBAR: Templates + Preview -->
+    <div style="position:sticky;top:20px;">
+      <h3 style="color:#ff0;">🤖 AI TEMPLATES (92% Avg Success)</h3>
+      <div class="templates" id="templateList"></div>
+      
+      <h3 style="color:#ff0;margin-top:30px;">✏️ CUSTOM EDITOR</h3>
+      <select id="templateSelect" onchange="loadTemplate()">
+        <option value="custom">Custom HTML</option>
+      </select>
+      <textarea id="customEditor" rows="8" placeholder="Paste custom phishing HTML here...&#10;Use {{target}} for email address" style="display:none;"></textarea>
+      
+      <h3 style="color:#ff0;margin-top:20px;">📱 LIVE PREVIEW</h3>
+      <div class="preview" id="preview">{{ Select template }}</div>
+      
+      <button onclick="startBlast()" style="margin-top:20px;">🚀 LAUNCH OBLITERATION</button>
+    </div>
+  </div>
+
+  <script>
+    let blastActive = false;
+    
+    // Auto-refresh stats
+    setInterval(updateStats, 1500);
+    
+    async function updateStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        
+        document.getElementById('successRate').textContent = data.successRate + '%';
+        document.getElementById('sent').textContent = `${data.stats.obliterated}/${data.stats.total}`;
+        document.getElementById('providers').textContent = data.providersActive;
+        document.getElementById('leads').textContent = data.leadsParsed;
+        document.getElementById('campaigns').textContent = data.campaigns;
+        document.getElementById('remaining').textContent = data.emailsRemaining;
+        document.getElementById('bounced').textContent = data.stats.bounced;
+        document.getElementById('currentTemplate').textContent = data.currentTemplate?.toUpperCase() || '-';
+        
+        document.getElementById('blastBar').style.width = 
+          (data.stats.obliterated / data.stats.total * 100) + '%';
+        
+        showStep(data.step);
+        if (data.emailsRemaining === 0) {
+          document.getElementById('stopBtn').style.display = 'none';
+          blastActive = false;
+        }
+      } catch(e) { console.log('Stats update failed'); }
+    }
+    
+    function showStep(step) {
+      document.querySelectorAll('.step').forEach((s,i) => {
+        s.classList.toggle('active', i+1 === step);
+      });
+    }
+    
+    async function nextStep(step) {
+      if (step === 1) {
+        const emails = document.getElementById('emails').value;
+        await fetch('/api/step1', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({emails})
+        });
+      } else if (step === 2) {
+        await fetch('/api/step2', {method: 'POST'});
+      }
+      updateStats();
+    }
+    
+    async function loadTemplates() {
+      const res = await fetch('/api/stats');
+      const { templates } = await res.json();
+      
+      const list = document.getElementById('templateList');
+      list.innerHTML = Object.entries(templates).map(([key, data]) => 
+        `<div class="template-item" onclick="selectTemplate('${key}')">
+          ${data.name} <span style="float:right;color:#ff0">${data.successRate}%</span>
+        </div>`
+      ).join('');
+    }
+    
+    async function selectTemplate(name) {
+      globalState.template = name;
+      const res = await fetch(`/api/templates/${name}`);
+      const { html } = await res.json();
+      document.getElementById('preview').innerHTML = html.replace('{{target}}', 'victim@target.com');
+      document.getElementById('customEditor').style.display = 'none';
+    }
+    
+    async function loadTemplate() {
+      const sel = document.getElementById('templateSelect').value;
+      if (sel === 'custom') {
+        document.getElementById('customEditor').style.display = 'block';
+      } else {
+        document.getElementById('customEditor').style.display = 'none';
+        selectTemplate(sel);
+      }
+    }
+    
+    async function startBlast() {
+      const template = document.getElementById('templateSelect').value;
+      const custom = document.getElementById('customEditor').value;
+      
+      await fetch('/api/blast', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ template, custom })
+      });
+      
+      blastActive = true;
+      document.getElementById('stopBtn').style.display = 'block';
+    }
+    
+    function stopBlast() {
+      // Client-side pause (server cron continues)
+      blastActive = false;
+    }
+    
+    // INIT
+    loadTemplates();
+    updateStats();
+  </script>
+</body>
+</html>
